@@ -163,6 +163,86 @@
   let quizActive = false;   // 正在测评
   let quizIdx = 0;
   let quizAnswers = {};
+  const openCourses = new Set();   // 学习页展开的课程
+
+  /* ------- 伴学助手：术语即点即释 + 划选解释 ------- */
+  function wrapGlossary(root) {
+    if (!root || !root.querySelectorAll) return;
+    const items = GLOSSARY.slice().sort((a, b) => b.term.length - a.term.length);
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: n => {
+        const p = n.parentElement;
+        if (!p) return NodeFilter.FILTER_REJECT;
+        if (p.closest(".term, script, style, pre, textarea, button, svg")) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(node => {
+      let text = node.nodeValue;
+      for (const g of items) {
+        let lower = text.toLowerCase(), idx = lower.indexOf(g.term.toLowerCase());
+        while (idx !== -1) {
+          const frag = document.createDocumentFragment();
+          frag.appendChild(document.createTextNode(text.slice(0, idx)));
+          const span = document.createElement("span");
+          span.className = "term";
+          span.dataset.term = g.term;
+          span.textContent = text.slice(idx, idx + g.term.length);
+          frag.appendChild(span);
+          node.parentNode.insertBefore(frag, node);
+          text = text.slice(idx + g.term.length);
+          node.nodeValue = text;
+          lower = text.toLowerCase();
+          idx = lower.indexOf(g.term.toLowerCase());
+        }
+      }
+    });
+  }
+  function showCompanion(html) {
+    let el = $("#companion");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "companion";
+      document.body.appendChild(el);
+    }
+    el.innerHTML = html + '<button class="companion-close" data-action="closeCompanion">✕</button>';
+    el.classList.remove("hidden");
+  }
+  function showTerm(term) {
+    const g = GLOSSARY.find(x => x.term === term);
+    if (!g) return;
+    showCompanion(`<div class="cp-term">📖 ${esc(g.term)}</div><div class="cp-body">${esc(g.plain)}</div>`);
+  }
+  function explainSelection() {
+    let sel = "";
+    const s = window.getSelection ? window.getSelection() : null;
+    if (s && s.rangeCount && !s.isCollapsed) sel = rangeText(s.getRangeAt(0));
+    if (!sel) sel = lastSelText;
+    if (!sel || !sel.trim()) return toast("请先在正文里选中一段看不懂的话", 3000);
+    const lower = sel.toLowerCase();
+    const hits = GLOSSARY.filter(g => lower.includes(g.term.toLowerCase())).slice(0, 3);
+    let html = `<div class="cp-term">🤖 伴学助手</div><div class="cp-quote">「${esc(sel.length > 120 ? sel.slice(0, 120) + "…" : sel)}」</div>`;
+    if (hits.length) {
+      html += hits.map(g => `<div class="cp-hit"><b>📖 ${esc(g.term)}</b>${esc(g.plain)}</div>`).join("");
+    } else {
+      html += `<div class="cp-body">这段话里没有命中内置术语。把它拆开看：先找出不懂的关键词（可以点击页面里带虚线的词）；或者复制下面的提问模板，发给 ChatGPT/豆包等任意 AI 继续追问：</div>
+        <div class="cp-tpl">请用初中生能听懂的语言，解释下面这段我正在学的内容，并举一个生活中的例子：\n「${esc(sel.length > 300 ? sel.slice(0, 300) + "…" : sel)}」</div>
+        <div class="btn-row"><button class="btn sm" data-action="copyTpl">📋 复制提问模板</button></div>`;
+    }
+    showCompanion(html);
+  }
+  function openGlossary() {
+    showCompanion(`<div class="cp-term">📖 术语速查（点词即释）</div><input type="text" id="glossSearch" placeholder="搜索术语，如：RAG、幻觉、API…" />
+      <div class="cp-list" id="glossList"></div>`);
+    const render = kw => {
+      const list = GLOSSARY.filter(g => !kw || g.term.toLowerCase().includes(kw.toLowerCase()));
+      $("#glossList").innerHTML = list.map(g => `<details><summary>${esc(g.term)}</summary><div class="cp-body">${esc(g.plain)}</div></details>`).join("") || '<p class="muted">没有找到，换个词试试</p>';
+    };
+    render("");
+    $("#glossSearch").addEventListener("input", e => render(e.target.value.trim()));
+  }
 
   /* ---------------- 标签页 ---------------- */
   function switchTab(name) {
@@ -252,6 +332,10 @@
     } else {
       html += renderQuizResult();
     }
+    html += `
+      <div class="card">
+        <p class="muted" style="margin:0;">🤖 <b>伴学小贴士：</b>读正文时遇到带虚线的词（如 <span class="term" data-term="API">API</span>、<span class="term" data-term="幻觉">幻觉</span>），点一下就有通俗解释；选中任何看不懂的句子，点右下角「🔍 解释这句」；更多术语在右下角 <button class="btn sm ghost" data-action="openGlossary">📖 术语速查</button></p>
+      </div>`;
     const list = orderedCourses();
     const doneCount = COURSES.filter(c => courseState(c.id).completed).length;
     const pct = Math.round(doneCount / COURSES.length * 100);
@@ -268,19 +352,21 @@
       const cs = courseState(c.id);
       const tag = recs ? recLabel(recs[c.id]) : "";
       const doneTag = cs.completed ? '<span class="tag done">✓ 已学完</span>' : (cs.read ? '<span class="tag part">学习中</span>' : "");
+      const quizTag = courseQuizPassed(c) ? '<span class="tag done">✓ 测验通过</span>' : "";
       if (c.module !== lastModule) {
         lastModule = c.module;
         html += `<div class="module-title">${esc(c.module)}</div>`;
       }
       html += `
-        <div class="card course-item ${cs.completed ? "done" : ""}" data-course="${c.id}">
+        <div class="card course-item ${cs.completed ? "done" : ""} ${openCourses.has(c.id) ? "open" : ""}" data-course="${c.id}">
           <div class="course-head" data-action="toggle" data-id="${c.id}">
             <div class="num">${i}</div>
-            <div class="t"><b>${esc(c.title)}${tag}${doneTag}</b><span>${esc(c.subtitle)}</span></div>
+            <div class="t"><b>${esc(c.title)}${tag}${doneTag}${quizTag}</b><span>${esc(c.subtitle)}</span></div>
             <div class="arrow">▶</div>
           </div>
           <div class="course-body">
             ${c.content}
+            ${renderCourseQuiz(c, cs)}
             <label class="field">我的笔记<span class="tip">（自动保存，随云端同步）</span></label>
             <textarea rows="3" data-action="notes" data-id="${c.id}" placeholder="写下你的理解、疑问或例子…">${esc(cs.notes || "")}</textarea>
             <div class="btn-row">
@@ -290,6 +376,40 @@
         </div>`;
     });
     $("#view-learn").innerHTML = html;
+    wrapGlossary($("#view-learn"));
+  }
+
+  /* ------- 课末测验：确认真的学懂了 ------- */
+  function renderCourseQuiz(c, cs) {
+    if (!c.quiz) return "";
+    cs.quiz = cs.quiz || {};
+    const allRight = c.quiz.every((q, j) => cs.quiz[j] === q.answer);
+    let html = `<div class="course-quiz" id="quiz-${c.id}">
+      <h3>✍️ 学完测一测（确认你真的懂了）</h3>
+      ${allRight ? '<div class="quiz-pass">🎉 测验通过！这个概念你已经掌握，复习卡片会帮你保持记忆。</div>' : '<p class="muted">选出你认为对的答案，答错会看到解析，改到全对为止。</p>'}`;
+    c.quiz.forEach((q, j) => {
+      const chosen = cs.quiz[j];
+      html += `<div class="cq-q">${j + 1}. ${esc(q.q)}</div><div class="quiz-options">`;
+      q.options.forEach((opt, oi) => {
+        let cls = "quiz-opt";
+        if (chosen !== undefined) {
+          if (oi === q.answer) cls += " right";
+          else if (oi === chosen) cls += " wrong";
+        }
+        html += `<button class="${cls}" data-action="quizAns" data-id="${c.id}" data-j="${j}" data-opt="${oi}">${esc(opt)}${chosen !== undefined && oi === q.answer ? " ✅" : ""}${chosen === oi && oi !== q.answer ? " ❌" : ""}</button>`;
+      });
+      html += `</div>`;
+      if (chosen !== undefined) {
+        const right = chosen === q.answer;
+        html += `<div class="cq-explain ${right ? "ok" : "bad"}">${right ? "✅ 答对了！" : "❌ 再想想："}${esc(q.explain)}</div>`;
+      }
+    });
+    html += `</div>`;
+    return html;
+  }
+  function courseQuizPassed(c) {
+    const cs = state.courses[c.id];
+    return !!(c.quiz && cs && cs.quiz && c.quiz.every((q, j) => cs.quiz[j] === q.answer));
   }
 
   /* ---------------- 预习页 ---------------- */
@@ -345,6 +465,7 @@
         const s = state.cards[c.id];
         return s && s.due > Date.now() && s.due < Date.now() + 24 * 3600 * 1000;
       }).length;
+      const needQuiz = COURSES.filter(c => courseState(c.id).completed && !courseQuizPassed(c));
       $("#view-review").innerHTML = `
         <div class="card empty">
           <span class="big">🌿</span>
@@ -353,7 +474,13 @@
           <div class="btn-row" style="justify-content:center;">
             <button class="btn ghost" data-action="forceReview">再练 5 张（加练）</button>
           </div>
-        </div>`;
+        </div>
+        ${needQuiz.length ? `
+        <div class="card">
+          <h2>📝 闯关测验：确认你真的学懂了</h2>
+          <p class="muted">下面这些课你标记了学完，但课末测验还没全对。做对才算真正掌握：</p>
+          ${needQuiz.map(c => `<div class="overview-row"><span>${esc(c.title)}</span><button class="btn sm" data-action="gotoQuiz" data-id="${c.id}">去测验 →</button></div>`).join("")}
+        </div>` : ""}`;
       updateBadge();
       return;
     }
@@ -564,6 +691,8 @@
 
   /* ---------------- 事件委托 ---------------- */
   document.addEventListener("click", ev => {
+    const termEl = ev.target.closest(".term");
+    if (termEl) { showTerm(termEl.dataset.term); return; }
     const btn = ev.target.closest("[data-action]");
     if (!btn) return;
     const action = btn.dataset.action;
@@ -575,7 +704,26 @@
       quizIdx++;
       renderQuiz();
     } else if (action === "toggle") {
-      btn.closest(".course-item").classList.toggle("open");
+      const item = btn.closest(".course-item");
+      item.classList.toggle("open");
+      if (item.classList.contains("open")) openCourses.add(id); else openCourses.delete(id);
+    } else if (action === "quizAns") {
+      const cs = courseState(btn.dataset.id);
+      cs.quiz = cs.quiz || {};
+      cs.quiz[btn.dataset.j] = parseInt(btn.dataset.opt, 10);
+      save();
+      renderLearn();
+    } else if (action === "closeCompanion") {
+      const el = $("#companion");
+      if (el) el.classList.add("hidden");
+    } else if (action === "copyTpl") {
+      const tpl = $("#companion .cp-tpl");
+      const t = (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(tpl.textContent) : Promise.reject();
+      t.then(() => toast("提问模板已复制，去粘贴给任意 AI ✓")).catch(() => toast("请长按选中模板文字手动复制", 3500));
+    } else if (action === "openGlossary") {
+      openGlossary();
+    } else if (action === "explainSel") {
+      explainSelection();
     } else if (action === "complete") {
       const cs = courseState(id);
       cs.completed = !cs.completed;
@@ -604,6 +752,11 @@
     } else if (action === "forceReview") {
       reviewQueue = newCards(5).concat(CARDS.filter(c => state.cards[c.id]).sort(() => Math.random() - 0.5).slice(0, 5));
       renderReview();
+    } else if (action === "gotoQuiz") {
+      openCourses.add(id);
+      switchTab("learn");
+      const q = document.getElementById("quiz-" + id);
+      if (q) q.scrollIntoView({ behavior: "smooth", block: "start" });
     } else if (action === "goReview") {
       reviewQueue = null;
       switchTab("review");
@@ -645,6 +798,37 @@
       clearTimeout(window.__noteTimer);
       window.__noteTimer = setTimeout(save, 800);
     }
+  });
+
+  let lastSelText = "";
+  function rangeText(r) {
+    let t = "";
+    try { t = r.toString(); } catch (e) { }
+    if (!t) {
+      const div = document.createElement("div");
+      div.appendChild(r.cloneContents());
+      t = div.textContent;
+    }
+    return t.trim();
+  }
+  document.addEventListener("pointerup", ev => {
+    setTimeout(() => {
+      const chip = $("#selChip");
+      if (!chip) return;
+      const sel = window.getSelection ? window.getSelection() : null;
+      if (sel && sel.rangeCount && !sel.isCollapsed) {
+        const range = sel.getRangeAt(0);
+        const anchorEl = range.commonAncestorContainer.parentElement;
+        const inCourse = anchorEl && anchorEl.closest && anchorEl.closest("#view-learn .course-body");
+        const text = rangeText(range);
+        if (inCourse && text.length > 3) {
+          lastSelText = text;
+          chip.classList.remove("hidden");
+          return;
+        }
+      }
+      chip.classList.add("hidden");
+    }, 10);
   });
 
   /* ---------------- PWA ---------------- */
