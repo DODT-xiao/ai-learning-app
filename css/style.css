@@ -136,6 +136,75 @@ body {
 .result-card { background: linear-gradient(160deg, #ffffff, #eef2ff); }
 .score-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; font-size: .9rem; }
 .score-row span { width: 9em; flex: none; font-size: .85rem; }
+
+/* ---------- 图解 ---------- */
+.dg { margin: 12px 0; }
+.dg svg {
+  width: 100%; height: auto; display: block;
+  background: linear-gradient(180deg, #fdfdff, #f6f8ff);
+  border: 1px solid var(--border); border-radius: 12px; padding: 4px;
+}
+
+/* ---------- 伴学术语 ---------- */
+.term {
+  border-bottom: 2px dotted #0ea5e9; cursor: help;
+  color: #0369a1; font-weight: 600;
+}
+.term:hover { background: #e0f2fe; border-bottom-style: solid; }
+
+/* ---------- 课末测验 ---------- */
+.course-quiz {
+  margin-top: 20px; padding: 14px;
+  background: #f8fafc; border: 1px dashed var(--border); border-radius: 12px;
+}
+.course-quiz h3 { margin: 0 0 6px; color: var(--primary); }
+.quiz-pass { background: #dcfce7; color: #166534; border-radius: 10px; padding: 10px 14px; font-size: .9rem; margin: 8px 0; }
+.cq-q { font-weight: 600; margin: 14px 0 8px; font-size: .93rem; }
+.quiz-opt.right { border-color: var(--ok); background: #f0fdf4; }
+.quiz-opt.wrong { border-color: var(--danger); background: #fef2f2; }
+.cq-explain { border-radius: 10px; padding: 9px 13px; font-size: .86rem; margin-top: 8px; }
+.cq-explain.ok { background: #f0fdf4; color: #166534; }
+.cq-explain.bad { background: #fef2f2; color: #991b1b; }
+
+/* ---------- 伴学助手面板 ---------- */
+#companion {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: 86px; z-index: 70;
+  width: min(560px, 92vw); max-height: 62vh; overflow-y: auto;
+  background: #fff; border-radius: 16px; box-shadow: 0 8px 40px rgba(15,23,42,.22);
+  padding: 16px 18px;
+}
+#companion .companion-close {
+  position: absolute; top: 10px; right: 10px;
+  border: 0; background: #f1f5f9; color: var(--muted);
+  width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: .85rem;
+}
+.cp-term { font-weight: 700; font-size: 1.05rem; color: var(--primary); margin-bottom: 8px; }
+.cp-body { font-size: .92rem; line-height: 1.7; }
+.cp-quote { background: var(--primary-soft); border-radius: 10px; padding: 8px 12px; font-size: .88rem; color: #3730a3; margin-bottom: 10px; }
+.cp-hit { border-top: 1px dashed var(--border); padding: 10px 0; font-size: .9rem; line-height: 1.7; }
+.cp-hit b { color: var(--primary); display: block; margin-bottom: 3px; }
+.cp-tpl { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 10px 12px; font-size: .8rem; white-space: pre-wrap; }
+.cp-list { margin-top: 8px; }
+.cp-list details { border-bottom: 1px dashed var(--border); }
+.cp-list summary { cursor: pointer; padding: 9px 2px; font-weight: 600; font-size: .92rem; color: var(--primary); }
+#companion input { margin: 4px 0 8px; }
+
+/* ---------- 悬浮按钮 ---------- */
+.fab {
+  position: fixed; right: 16px; z-index: 60;
+  border: 0; border-radius: 99px; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(79,70,229,.35);
+  font-size: .85rem;
+}
+.fab-main {
+  bottom: 96px; width: 48px; height: 48px; font-size: 1.3rem;
+  background: linear-gradient(135deg, #4f46e5, #0ea5e9); color: #fff;
+}
+.sel-chip {
+  bottom: 154px; padding: 9px 16px;
+  background: #0f172a; color: #fff;
+}
 .score-row b { width: 3.2em; text-align: right; color: var(--primary); }
 .score-bar { flex: 1; height: 10px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
 .score-bar > div { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 99px; }
