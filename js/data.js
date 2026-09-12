@@ -1,11 +1,8 @@
-/* 内置课程数据（v2：面向职场 AI 应用者）
+/* 内置课程数据（v3：图解 + 课末测验 + 伴学术语库）
  * 课程体系参考：
  *   - microsoft/generative-ai-for-beginners（概念→提示词→应用→RAG→Agent→安全）
  *   - mlabonne/llm-course（基础部分可跳过、按需学习）
  *   - roadmap.sh/ai-engineer（面向用 AI 构建应用的人，而非造模型的研究员）
- *
- * 每课：preview 预习要点 / why 为什么学 / content 正文 / cards 复习卡片
- * 每题：dim 维度(web/ai/app) / answer 正确项 / recs 答对时对应课程标记为可跳过
  */
 const COURSES = [
   {
@@ -23,6 +20,30 @@ const COURSES = [
     content: `
       <h3>一张图看懂：你去餐厅吃饭</h3>
       <p>把一个网页应用想象成一家餐厅：<b>前端</b>是餐厅大堂——菜单、装修、点餐屏，你直接看到和触摸的部分；<b>后端</b>是后厨——你看不见，但真正处理"红烧肉怎么做"的地方；<b>数据库</b>是仓库——所有食材（数据）整齐存放的地方；<b>API</b>是服务员——在大堂和后厨之间传菜传单。</p>
+      <div class="dg"><svg viewBox="0 0 660 200" role="img" aria-label="前后端架构图">
+      <defs><marker id="mA1" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0L9,4.5L0,9z" fill="#475569"/></marker></defs>
+      <text x="330" y="22" text-anchor="middle" font-size="13" fill="#64748b">类比餐厅：前端=大堂 · API=服务员 · 后端=后厨 · 数据库=仓库</text>
+      <rect x="10" y="60" width="150" height="84" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+      <text x="85" y="88" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e293b">🖥️ 前端</text>
+      <text x="85" y="108" text-anchor="middle" font-size="12" fill="#475569">HTML / CSS / JS</text>
+      <text x="85" y="126" text-anchor="middle" font-size="12" fill="#475569">用户看到的界面</text>
+      <line x1="164" y1="112" x2="254" y2="112" stroke="#475569" stroke-width="2" marker-end="url(#mA1)"/>
+      <line x1="254" y1="92" x2="164" y2="92" stroke="#475569" stroke-width="2" marker-end="url(#mA1)"/>
+      <text x="209" y="72" text-anchor="middle" font-size="12" fill="#0ea5e9" font-weight="bold">API 传话</text>
+      <text x="209" y="140" text-anchor="middle" font-size="11" fill="#64748b">请求 / 响应</text>
+      <rect x="258" y="60" width="150" height="84" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+      <text x="333" y="88" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e293b">🍳 后端</text>
+      <text x="333" y="108" text-anchor="middle" font-size="12" fill="#475569">服务器上的程序</text>
+      <text x="333" y="126" text-anchor="middle" font-size="12" fill="#475569">处理业务逻辑</text>
+      <line x1="412" y1="112" x2="490" y2="112" stroke="#475569" stroke-width="2" marker-end="url(#mA1)"/>
+      <line x1="490" y1="92" x2="412" y2="92" stroke="#475569" stroke-width="2" marker-end="url(#mA1)"/>
+      <text x="451" y="72" text-anchor="middle" font-size="12" fill="#0ea5e9" font-weight="bold">读写数据</text>
+      <rect x="494" y="60" width="156" height="84" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+      <text x="572" y="88" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e293b">🗄️ 数据库</text>
+      <text x="572" y="108" text-anchor="middle" font-size="12" fill="#475569">数据安全存放</text>
+      <text x="572" y="126" text-anchor="middle" font-size="12" fill="#475569">不因刷新丢失</text>
+      <text x="330" y="180" text-anchor="middle" font-size="12" fill="#94a3b8">代码写好后「部署」到云服务器，全世界就能访问了</text>
+      </svg></div>
       <h3>前端（Frontend）：你看到的一切</h3>
       <p>浏览器里显示的页面、按钮、动画，由三种代码写成：<b>HTML</b> 是骨架（页面上有什么）、<b>CSS</b> 是皮肤（长什么样、什么颜色）、<b>JavaScript</b> 是动作（点击后发生什么）。你现在用的这个学习应用，界面就是前端。你 vibe coding 时 AI 生成的 <code class="inline">index.html</code>、<code class="inline">style.css</code>，就是前端文件。</p>
       <h3>后端（Backend）：看不见的干活的人</h3>
@@ -42,6 +63,11 @@ const COURSES = [
       { q: "API 是什么？用一个比喻说明", a: "应用程序接口，相当于餐厅服务员：前端向后端发请求（点菜），后端处理后返回结果（上菜）。调用 ChatGPT 也是调 API。" },
       { q: "「部署」是什么意思？", a: "把写好的代码放到服务器上运行，让全世界都能通过网址访问。静态网站可用 GitHub Pages，复杂应用用云服务器。" },
       { q: "AI 给你生成了 index.html、server.py、schema.sql，各是什么？", a: "index.html 是前端页面；server.py 是后端程序；schema.sql 是数据库表结构定义。" }
+    ],
+    quiz: [
+      { q: "用户在浏览器里填写的登录密码，应该在哪个环节校验？", options: ["后端服务器", "浏览器前端", "数据库"], answer: 0, explain: "前端代码用户能看到、能篡改，安全校验必须放在自己控制的后端。" },
+      { q: "AI 帮你生成了一个 style.css 文件，它属于哪一层？", options: ["前端", "后端", "数据库"], answer: 0, explain: ".css 是样式文件，属于前端三件套（HTML/CSS/JS）。" },
+      { q: "「部署」指的是什么？", options: ["把代码压缩变小", "把代码放到服务器上运行，让用户能访问", "给代码加密"], answer: 1, explain: "部署 = 上线。代码要在服务器上跑起来，别人才能通过网址访问。" }
     ]
   },
   {
@@ -58,12 +84,33 @@ const COURSES = [
     ],
     content: `
       <h3>核心：文字接龙机器</h3>
-      <p>大模型（如 GPT）做的事业朴素得出奇：<b>根据前面所有文字，预测下一个词的概率</b>。"今天天气真" → "好"（85%）、"不错"（10%）……选中一个词，拼回去，再预测下一个，如此循环。所有翻译、写代码、写报告，本质上都是这场高级接龙——因为要接得像样，模型必须"理解"语言和知识。</p>
+      <p>大模型（如 GPT）做的事业朴素得出奇：<b>根据前面所有文字，预测下一个词的概率</b>。看下图："今天天气真" 后面，接"好"的概率是 85%……选中一个词，拼回去，再预测下一个，如此循环。</p>
+      <div class="dg"><svg viewBox="0 0 660 200" role="img" aria-label="文字接龙示意图">
+      <defs><marker id="mA2" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0L9,4.5L0,9z" fill="#475569"/></marker></defs>
+      <rect x="10" y="80" width="160" height="60" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+      <text x="90" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b">已生成的文字</text>
+      <text x="90" y="124" text-anchor="middle" font-size="13" fill="#475569">「今天天气真___」</text>
+      <line x1="174" y1="110" x2="240" y2="110" stroke="#475569" stroke-width="2" marker-end="url(#mA2)"/>
+      <rect x="244" y="70" width="150" height="80" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+      <text x="319" y="102" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e293b">🤖 大模型</text>
+      <text x="319" y="124" text-anchor="middle" font-size="12" fill="#475569">计算下一个词</text>
+      <text x="319" y="140" text-anchor="middle" font-size="12" fill="#475569">的概率分布</text>
+      <line x1="398" y1="110" x2="452" y2="110" stroke="#475569" stroke-width="2" marker-end="url(#mA2)"/>
+      <text x="492" y="66" text-anchor="middle" font-size="12" fill="#1e293b" font-weight="bold">好 · 85%</text>
+      <rect x="460" y="72" width="180" height="12" rx="6" fill="#e2e8f0"/><rect x="460" y="72" width="153" height="12" rx="6" fill="#4f46e5"/>
+      <text x="492" y="106" text-anchor="middle" font-size="12" fill="#1e293b">不错 · 10%</text>
+      <rect x="460" y="96" width="180" height="12" rx="6" fill="#e2e8f0"/><rect x="460" y="96" width="18" height="12" rx="6" fill="#0ea5e9"/>
+      <text x="492" y="136" text-anchor="middle" font-size="12" fill="#1e293b">冷 · 5%</text>
+      <rect x="460" y="120" width="180" height="12" rx="6" fill="#e2e8f0"/><rect x="460" y="120" width="9" height="12" rx="6" fill="#94a3b8"/>
+      <path d="M 540 150 C 400 205 150 195 88 148" stroke="#0ea5e9" stroke-width="2" fill="none" stroke-dasharray="6 4" marker-end="url(#mA2)"/>
+      <text x="320" y="196" text-anchor="middle" font-size="12" fill="#0ea5e9">选中一个词拼回去 → 再预测下一个 → 循环，直到整段话写完</text>
+      </svg></div>
+      <p>所有翻译、写代码、写报告，本质上都是这场高级接龙——因为要接得像样，模型必须"理解"语言和知识。</p>
       <h3>Token：模型眼里的文字单位</h3>
       <p>模型不按"字"或"词"读文本，而是按 <b>token</b>（词元）——一个英文单词可能是 1 个 token，一个汉字通常是 1-2 个 token。计费、速度限制、上下文长度，全都按 token 数计算，这就是为什么 API 按 token 收费。</p>
       <h3>训练 vs 推理</h3>
       <ul>
-        <li><b>训练</b>：让模型读完海量文本（几乎是整个互联网），用几万张显卡跑几个月，调整数千亿个参数。极贵，只有大公司做。</li>
+        <li><b>训练</b>：让模型读完海量文本（几乎是整个互联网），用几万张显卡跑几个月，调整数千亿个<b>参数</b>。极贵，只有大公司做。</li>
         <li><b>推理</b>：训练好的模型被你使用的过程（你问它答）。你每次对话，模型都在做几亿次计算，所以按 token 收费。</li>
       </ul>
       <h3>上下文窗口：模型的"工作记忆"</h3>
@@ -79,6 +126,11 @@ const COURSES = [
       { q: "为什么聊得久了大模型会忘记开头说的话？", a: "上下文窗口有限（如 128K token），超出窗口的早期内容不再参与计算，等于被遗忘了。" },
       { q: "幻觉产生的原因是什么？", a: "模型优化的是「接得像」而非「说得对」，没学过的事实也会按概率编出听起来合理的答案。" },
       { q: "temperature 参数调低/调高分别什么效果？", a: "调低：总选最高概率词，稳定刻板，适合数据提取；调高：敢选小概率词，有创意但不稳定，适合头脑风暴。" }
+    ],
+    quiz: [
+      { q: "大模型逐字生成文本时，每一步在做什么？", options: ["在数据库里搜索现成答案", "预测下一个词的概率", "播放预先写好的模板"], answer: 1, explain: "本质是文字接龙：根据前文计算每个候选词的概率，选一个拼回去继续。" },
+      { q: "和 AI 聊了很久后它「忘了」开头，是因为？", options: ["上下文窗口有限，超出的内容不再参与计算", "它故意装忘", "网络不稳定"], answer: 0, explain: "上下文窗口是工作记忆上限，早期对话被挤出窗口就等于遗忘。" },
+      { q: "把 temperature 调低，模型会怎样？", options: ["更有创意", "回答更稳定、刻板", "响应更快"], answer: 1, explain: "调低=总选最高概率词，输出稳定但呆板，适合数据提取类任务。" }
     ]
   },
   {
@@ -124,6 +176,11 @@ const COURSES = [
       { q: "输出不满意时，更高效的做法是什么？", a: "迭代追问而非重来：针对具体问题追加指令（如「第2点展开」「语气更正式」），在原对话里打磨。" },
       { q: "「先分析再给结论」为什么能提升准确率？", a: "让模型把推理过程显式写出来（分步思考），相当于给它更多计算步骤，复杂问题的错误率明显下降。" },
       { q: "列出两条提示词避坑原则", a: "①一次别塞太多任务，拆成多轮；②重要事实要求引用原文或人工核实；③好提示词存成模板复用。（答两条即可）" }
+    ],
+    quiz: [
+      { q: "「你是一位资深财务分析师」属于提示词框架里的哪个要素？", options: ["角色", "任务", "格式"], answer: 0, explain: "角色设定让模型切换到对应的语言风格和知识密度。" },
+      { q: "给 AI 一个你满意的成品让它模仿，这叫？", options: ["few-shot 少样本示例", "分步思考", "重新训练"], answer: 0, explain: "示例（few-shot）是提升格式和口吻命中率最强的技巧。" },
+      { q: "第一次输出不理想，更推荐的做法是？", options: ["换个全新的提示词重问", "在原对话里针对具体问题迭代追问", "放弃这个任务"], answer: 1, explain: "迭代打磨比推倒重来高效：指出哪里不满意，让模型修改。" }
     ]
   },
   {
@@ -168,6 +225,11 @@ const COURSES = [
       { q: "git 的存档和回滚各用什么命令？", a: "存档：git add . + git commit -m \"描述\"；回滚到最近存档：git checkout .（丢弃未提交修改）。" },
       { q: "上线前的验收清单至少列三条", a: "①自己过一遍正常+异常流程；②检查密钥是否明文（应用环境变量）；③让 AI 自审安全风险；④确认数据存储持久化（是否重启就丢）。" },
       { q: "遇到报错，喂给 AI 的正确方式？", a: "完整贴报错信息（含堆栈），说明项目的框架和版本等上下文，而不是只说「跑不起来」。" }
+    ],
+    quiz: [
+      { q: "AI 写代码的本质是？", options: ["理解你的业务后从零设计", "对海量开源代码的统计模仿", "随机组合字符"], answer: 1, explain: "它见过一万个类似需求，拼一个统计上最像的方案——所以常见需求强，上下文弱。" },
+      { q: "AI 代码的三种问题里，最危险的是？", options: ["一跑就报错的编造", "用了过时写法", "功能正常但有安全漏洞的隐雷"], answer: 2, explain: "隐雷不报错、不易发现，如密码明文存储、数据只存内存重启就丢。" },
+      { q: "git commit 的作用是？", options: ["发布上线", "存档当前进度，可随时回滚", "删除历史代码"], answer: 1, explain: "commit 是存档点：AI 写崩了随时 checkout 回到上一个能用的版本。" }
     ]
   },
   {
@@ -206,6 +268,11 @@ const COURSES = [
       { q: "让 AI 总结长文档时，如何压住幻觉？", a: "要求分条总结并标注出处（第几章/页），必要时让它先引用原文再总结；关键结论人工抽查。" },
       { q: "什么任务值得升级成自动化工作流？", a: "每周出现 ≥2 次、规则清晰明确的重复任务。工具可选零代码（影刀/n8n/机器人）或 vibe coding 写脚本。" },
       { q: "职场用 AI 的两条底线？", a: "对外发出的内容（客户邮件、上报数字）必须人工核验；敏感数据先脱敏再喂给公开 AI。" }
+    ],
+    quiz: [
+      { q: "哪类工作适合「AI 全自动、不需要人审」？", options: ["给客户的报价单", "格式转换、翻译、错别字检查", "绩效评价"], answer: 1, explain: "机械转换类错误易发现、风险低；对外内容和高风险判断必须人把关。" },
+      { q: "处理会议录音的高效流程是？", options: ["自己通读全文整理", "先转文字，再让 AI 提炼为结论/待办/分歧三段", "只记一下标题"], answer: 1, explain: "转文字后让 AI 按固定结构提炼，比通读快 10 倍。" },
+      { q: "什么任务值得搭自动化工作流？", options: ["一年才做一次的", "每周出现 ≥2 次且规则清晰的", "规则每次都变的"], answer: 1, explain: "高频+规则清晰才值得投入搭建成本；规则常变的任务自动化维护成本高。" }
     ]
   },
   {
@@ -222,8 +289,29 @@ const COURSES = [
     ],
     content: `
       <h3>API 就是标准化的外卖窗口</h3>
-      <p>上一课我们说 API 是前后端的传话人。放大到整个互联网：<b>API 是程序之间约定的对话方式</b>——你按规定的格式发请求，我按规定格式回你数据，双方不用知道对方内部怎么实现。就像外卖平台的取餐口：不管后厨是哪家店，你都能用同一种方式取餐。</p>
+      <p>第一课我们说 API 是前后端的传话人。放大到整个互联网：<b>API 是程序之间约定的对话方式</b>——你按规定的格式发请求，我按规定格式回你数据，双方不用知道对方内部怎么实现。就像外卖平台的取餐口：不管后厨是哪家店，你都能用同一种方式取餐。</p>
       <h3>一次大模型 API 调用的全过程</h3>
+      <div class="dg"><svg viewBox="0 0 660 200" role="img" aria-label="API 调用流程图">
+      <defs><marker id="mA3" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0L9,4.5L0,9z" fill="#475569"/></marker></defs>
+      <rect x="10" y="70" width="160" height="76" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+      <text x="90" y="100" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e293b">📱 你的应用</text>
+      <text x="90" y="122" text-anchor="middle" font-size="12" fill="#475569">界面 + 你的代码</text>
+      <line x1="174" y1="94" x2="260" y2="94" stroke="#475569" stroke-width="2" marker-end="url(#mA3)"/>
+      <text x="217" y="80" text-anchor="middle" font-size="11" fill="#64748b">① 请求</text>
+      <line x1="260" y1="126" x2="174" y2="126" stroke="#475569" stroke-width="2" marker-end="url(#mA3)"/>
+      <text x="217" y="168" text-anchor="middle" font-size="11" fill="#64748b">② 响应</text>
+      <rect x="264" y="60" width="170" height="96" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+      <text x="349" y="90" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e293b">🧠 大模型 API</text>
+      <text x="349" y="112" text-anchor="middle" font-size="12" fill="#475569">云上的"大脑"</text>
+      <text x="349" y="130" text-anchor="middle" font-size="12" fill="#475569">按 token 计费</text>
+      <rect x="478" y="60" width="172" height="96" rx="12" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+      <text x="564" y="88" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b">🔑 API Key</text>
+      <text x="564" y="108" text-anchor="middle" font-size="11.5" fill="#475569">= 身份证 + 钱包</text>
+      <text x="564" y="126" text-anchor="middle" font-size="11.5" fill="#475569">只放后端服务器</text>
+      <text x="564" y="144" text-anchor="middle" font-size="11.5" fill="#dc2626">绝不放前端代码里！</text>
+      <text x="330" y="30" text-anchor="middle" font-size="13" fill="#64748b">请求里带：模型名 + 你的问题 + API Key　→　响应里返回：生成的文字</text>
+      <text x="330" y="188" text-anchor="middle" font-size="12" fill="#94a3b8">所谓「AI 应用」，本质就是：把输入装进请求，把返回的文字放进漂亮界面</text>
+      </svg></div>
       <p>你在很多 AI 应用里打字提问，背后发生的事其实只有一次 HTTP 请求：</p>
       <pre>POST https://api.openai.com/v1/chat/completions
 {
@@ -248,6 +336,11 @@ const COURSES = [
       { q: "API Key 为什么不能写在前端代码里？", a: "前端代码对所有用户可见，Key 会泄露被盗刷。必须放在后端服务器（环境变量），由后端转发调用大模型。" },
       { q: "为什么多轮对话越聊成本越高？", a: "模型没有记忆，每轮都要把全部历史消息重新发送给 API，输入 token 随对话变长而累积增加。" },
       { q: "HTTP 429 错误表示什么？怎么处理？", a: "触发限流（每分钟调用超限）。处理：等待后自动重试（退避重试），或申请提升配额。" }
+    ],
+    quiz: [
+      { q: "API Key 的作用是什么？", options: ["给聊天内容加密", "证明你是谁，并按用量计费", "提升模型智力"], answer: 1, explain: "Key = 身份证 + 钱包：验证权限、记录用量扣费。所以泄露等于钱包泄露。" },
+      { q: "API Key 应该放在哪里？", options: ["前端代码里", "后端服务器的环境变量里", "发到工作群里保管"], answer: 1, explain: "前端代码人人可见；Key 只能放后端（环境变量），由后端转发调用。" },
+      { q: "调用 API 收到 429 错误，正确处理是？", options: ["立刻疯狂重试", "等待一会儿再重试（退避重试）", "重启电脑"], answer: 1, explain: "429=触发限流。疯狂重试只会更糟，正确做法是等一会儿再试。" }
     ]
   },
   {
@@ -267,15 +360,30 @@ const COURSES = [
       <p>大模型只知道自己训练时读过的东西，你公司的产品手册、内部制度它一无所知；硬要它答，就会幻觉。解决思路一：微调模型（把知识"练进"参数里）——贵、慢、更新难。思路二：<b>RAG（检索增强生成）</b>——先找到相关资料，塞进提示词里让它"开卷考试"。便宜、即时可更新，是绝对主流。</p>
       <h3>关键难题：资料太多，窗口太小</h3>
       <p>上下文窗口装不下 1000 份文档。怎么从海量资料里<b>找出最相关的几段</b>？早期用关键词搜索（搜"请假"找含"请假"二字），但"年假怎么申请"就搜不到写着"休假流程"的段落。<b>向量检索</b>解决了这个问题。</p>
+      <h3>RAG 完整流水线</h3>
+      <div class="dg"><svg viewBox="0 0 660 210" role="img" aria-label="RAG 流程图">
+      <defs><marker id="mA4" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0L9,4.5L0,9z" fill="#475569"/></marker></defs>
+      <text x="10" y="24" font-size="13" font-weight="bold" fill="#4f46e5">提前准备（知识入库）</text>
+      <rect x="10" y="36" width="140" height="44" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/><text x="80" y="63" text-anchor="middle" font-size="12.5" fill="#1e293b">📄 你的文档</text>
+      <line x1="154" y1="58" x2="176" y2="58" stroke="#475569" stroke-width="2" marker-end="url(#mA4)"/>
+      <rect x="180" y="36" width="140" height="44" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/><text x="250" y="63" text-anchor="middle" font-size="12.5" fill="#1e293b">✂️ 切成小段</text>
+      <line x1="324" y1="58" x2="346" y2="58" stroke="#475569" stroke-width="2" marker-end="url(#mA4)"/>
+      <rect x="350" y="36" width="140" height="44" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/><text x="420" y="63" text-anchor="middle" font-size="12.5" fill="#1e293b">🔢 转成向量</text>
+      <line x1="494" y1="58" x2="516" y2="58" stroke="#475569" stroke-width="2" marker-end="url(#mA4)"/>
+      <rect x="520" y="36" width="130" height="44" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/><text x="585" y="63" text-anchor="middle" font-size="12.5" fill="#1e293b">🗄️ 向量数据库</text>
+      <text x="10" y="122" font-size="13" font-weight="bold" fill="#0ea5e9">每次提问（开卷考试）</text>
+      <rect x="10" y="134" width="140" height="44" rx="10" fill="#e0f2fe" stroke="#0ea5e9" stroke-width="1.5"/><text x="80" y="161" text-anchor="middle" font-size="12.5" fill="#1e293b">❓ 用户提问</text>
+      <line x1="154" y1="156" x2="176" y2="156" stroke="#475569" stroke-width="2" marker-end="url(#mA4)"/>
+      <rect x="180" y="134" width="140" height="44" rx="10" fill="#e0f2fe" stroke="#0ea5e9" stroke-width="1.5"/><text x="250" y="161" text-anchor="middle" font-size="12.5" fill="#1e293b">🔍 检索最相关3段</text>
+      <line x1="324" y1="156" x2="346" y2="156" stroke="#475569" stroke-width="2" marker-end="url(#mA4)"/>
+      <rect x="350" y="134" width="140" height="44" rx="10" fill="#e0f2fe" stroke="#0ea5e9" stroke-width="1.5"/><text x="420" y="161" text-anchor="middle" font-size="12.5" fill="#1e293b">📝 拼进提示词</text>
+      <line x1="494" y1="156" x2="516" y2="156" stroke="#475569" stroke-width="2" marker-end="url(#mA4)"/>
+      <rect x="520" y="134" width="130" height="44" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/><text x="585" y="161" text-anchor="middle" font-size="12.5" fill="#1e293b">🤖 开卷作答</text>
+      <path d="M 585 130 C 585 105 250 105 250 130" stroke="#16a34a" stroke-width="2" fill="none" stroke-dasharray="6 4" marker-end="url(#mA4)"/>
+      <text x="330" y="200" text-anchor="middle" font-size="12" fill="#94a3b8">检索时把问题也转成向量，去向量库里找「意思最相近」的段落——这就是语义搜索</text>
+      </svg></div>
       <h3>向量：语义的坐标</h3>
-      <p>把每段文字交给<b>嵌入模型（Embedding Model）</b>，变成一串数字（向量）。神奇之处：<b>意思相近的文字，向量距离也近</b>——"年假申请"和"休假流程"的向量非常接近，虽然用词完全不同。检索时，把你的问题也变成向量，找出"距离最近"的几段资料，就是语义搜索。</p>
-      <h3>RAG 四步流程</h3>
-      <ol>
-        <li><b>切块</b>：把文档切成小段（如每 500 字一段）；</li>
-        <li><b>嵌入</b>：每段转成向量，存进向量数据库；</li>
-        <li><b>检索</b>：用户提问 → 问题转向量 → 找出最相关的 3-5 段；</li>
-        <li><b>生成</b>：把这些段落塞进提示词：「仅根据以下资料回答：……」→ 大模型开卷作答。</li>
-      </ol>
+      <p>把每段文字交给<b>嵌入模型（Embedding Model）</b>，变成一串数字（<b>向量</b>）。神奇之处：<b>意思相近的文字，向量距离也近</b>——"年假申请"和"休假流程"的向量非常接近，虽然用词完全不同。检索时，把你的问题也变成向量，找出"距离最近"的几段资料，就是语义搜索。</p>
       <h3>RAG vs 微调怎么选</h3>
       <p>记一条就行：<b>RAG 管"知识"，微调管"风格/技能"</b>。让 AI 懂你们公司的制度、产品文档 → RAG；让 AI 学会特定的输出格式、行业行文风格 → 微调。职场里 90% 的需求是知识问题，选 RAG。</p>
       <h3>不写代码也能体验</h3>
@@ -286,13 +394,18 @@ const COURSES = [
       { q: "RAG 和微调分别适合什么场景？", a: "RAG 管知识（公司文档、产品手册等会更新的内容）；微调管风格和技能（特定输出格式、行文风格）。90% 职场需求选 RAG。" },
       { q: "RAG 应用「有时答不上」最可能的原因？", a: "检索环节没命中相关段落（切块不合理/问法与资料用词差异大），不是模型本身笨。可优化切块策略或检索数量。" },
       { q: "为什么不直接把所有文档塞进提示词？", a: "上下文窗口装不下；且超长上下文费用高、模型注意力会稀释，中间内容容易被忽略。" }
+    ],
+    quiz: [
+      { q: "RAG 的核心思路是？", options: ["把知识重新训练进模型参数", "先检索相关资料，再让模型开卷作答", "换一个更大的模型"], answer: 1, explain: "RAG = 检索 + 生成：找到相关段落塞进提示词，便宜、即时可更新。" },
+      { q: "向量检索比关键词搜索强在哪？", options: ["速度更快", "能按语义匹配——意思相近就能搜到", "完全免费"], answer: 1, explain: "向量代表语义：「年假申请」能命中「休假流程」段落，关键词做不到。" },
+      { q: "想让 AI 掌握你们公司的产品手册，应优先选？", options: ["RAG（挂知识库）", "微调", "重新训练一个模型"], answer: 0, explain: "RAG 管知识、更新即生效、成本低；微调管风格技能。知识类需求 90% 选 RAG。" }
     ]
   },
   {
     id: "c8",
     module: "模块三 · 懂原理会搭建",
     title: "AI Agent：让 AI 替你干活",
-    subtitle: "从聊天到行动，2025 年最火的方向",
+    subtitle: "从聊天到行动，当前最火的方向",
     why: "Agent = 大模型 + 工具 + 循环。看懂它，你就看懂了 AI 自动化的下一站（也是 vibe coding 的进阶方向）。",
     preview: [
       "普通聊天和 Agent 的本质区别是什么？",
@@ -303,6 +416,24 @@ const COURSES = [
     content: `
       <h3>从"会说"到"会做"</h3>
       <p>你问 ChatGPT"帮我订下周三的会议室"，它只能给你一段文字建议，因为它<b>只有嘴，没有手</b>。<b>Agent（智能体）</b>就是给大模型装上手：允许它调用<b>工具</b>——查日历、发邮件、读写文件、操作网页——然后围绕目标自主决定"下一步调哪个工具"，循环执行直到完成。</p>
+      <div class="dg"><svg viewBox="0 0 660 210" role="img" aria-label="Agent 循环图">
+      <defs><marker id="mA5" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0L9,4.5L0,9z" fill="#475569"/></marker></defs>
+      <rect x="10" y="70" width="150" height="64" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+      <text x="85" y="96" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b">🎯 给个目标</text>
+      <text x="85" y="116" text-anchor="middle" font-size="12" fill="#475569">「安排下周会」</text>
+      <line x1="164" y1="102" x2="210" y2="102" stroke="#475569" stroke-width="2" marker-end="url(#mA5)"/>
+      <rect x="214" y="70" width="160" height="64" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+      <text x="294" y="96" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b">🧠 大模型思考</text>
+      <text x="294" y="116" text-anchor="middle" font-size="12" fill="#475569">决定下一步调哪个工具</text>
+      <line x1="378" y1="102" x2="424" y2="102" stroke="#475569" stroke-width="2" marker-end="url(#mA5)"/>
+      <rect x="428" y="70" width="160" height="64" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+      <text x="508" y="96" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b">🔧 执行工具</text>
+      <text x="508" y="116" text-anchor="middle" font-size="12" fill="#475569">查日历/发邮件/读文件</text>
+      <path d="M 508 138 C 508 190 294 190 294 142" stroke="#0ea5e9" stroke-width="2" fill="none" stroke-dasharray="6 4" marker-end="url(#mA5)"/>
+      <text x="400" y="182" text-anchor="middle" font-size="12" fill="#0ea5e9">结果喂回模型 → 继续思考 → 直到任务完成（循环）</text>
+      <text x="330" y="34" text-anchor="middle" font-size="13" fill="#64748b">模型是「大脑」只发指令，你的程序是「手脚」真正执行</text>
+      <text x="330" y="56" text-anchor="middle" font-size="12" fill="#dc2626">⚠️ 发邮件、下单等高风险动作前，务必设计「人工确认」环节 🙋</text>
+      </svg></div>
       <h3>工具调用（Function Calling）的原理</h3>
       <p>其实没有魔法：你提前告诉模型"你有这些工具可用，每个工具需要什么参数"。模型遇到任务时，<b>输出一段结构化文字表示"我要调用查日历工具，参数是下周三"</b>，<b>真正的执行是你的程序完成的</b>，执行结果再喂回给模型，它据此继续思考。模型是"大脑"，你的代码是"手脚"。</p>
       <h3>Agent = 循环里的大模型</h3>
@@ -317,6 +448,11 @@ const COURSES = [
       { q: "用一句话写出最小 Agent 的结构？", a: "while 未完成：模型思考 → 选择工具 → 程序执行 → 结果喂回。Agent 就是循环里的大模型。" },
       { q: "MCP 是什么？解决什么问题？", a: "模型上下文协议，AI 工具的统一接口标准（像 USB）：工具方按规范提供一次，各种 AI 应用都能即插即用，免去重复对接。" },
       { q: "为什么 Agent 需要人工确认环节？", a: "误差会随步骤连乘放大（每步 90% 准确率，十步后仅 35%）。高风险动作（发邮件、下单、删数据）必须设计人工确认。" }
+    ],
+    quiz: [
+      { q: "Agent 与普通聊天机器人的本质区别是？", options: ["界面更好看", "能调用工具并自主循环执行任务", "回答速度更快"], answer: 1, explain: "Agent = 大模型 + 工具 + 循环，从「会说」升级到「会做」。" },
+      { q: "工具调用时，真正执行操作的是？", options: ["大模型自己", "你的程序（模型只发出调用指令）", "网络运营商"], answer: 1, explain: "模型是大脑只输出「我要调什么工具+参数」，执行由你的代码完成。" },
+      { q: "为什么 Agent 的高风险动作要加人工确认？", options: ["走个流程而已", "每步误差连乘放大，多步后错误率很高", "法律强制要求所有 AI 行为都要确认"], answer: 1, explain: "每步 90% 准确率，十步连乘只剩 35%。发邮件、下单、删数据必须人审。" }
     ]
   },
   {
@@ -340,6 +476,14 @@ const COURSES = [
       </ul>
       <h3>脱敏：最小成本的保命技巧</h3>
       <p>让 AI 分析数据时，把敏感字段替换成代号："客户A、华东区、金额 45 万"。AI 需要的是<b>结构和模式</b>，不需要真实姓名。手机号、身份证、账号一律不放。这个习惯能挡住 80% 的风险。</p>
+      <div class="dg"><svg viewBox="0 0 660 110" role="img" aria-label="脱敏示例">
+      <rect x="10" y="20" width="300" height="70" rx="12" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+      <text x="160" y="48" text-anchor="middle" font-size="13" font-weight="bold" fill="#dc2626">❌ 原样贴出去</text>
+      <text x="160" y="72" text-anchor="middle" font-size="12.5" fill="#475569">张伟 138****1234 金额 45 万 · 华东区</text>
+      <rect x="350" y="20" width="300" height="70" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+      <text x="500" y="48" text-anchor="middle" font-size="13" font-weight="bold" fill="#16a34a">✅ 脱敏后再贴</text>
+      <text x="500" y="72" text-anchor="middle" font-size="12.5" fill="#475569">客户A 机型X 金额 45 万 · 华东区</text>
+      </svg></div>
       <h3>企业级的选型阶梯</h3>
       <ul>
         <li><b>公开个人版</b>（免费/20美元）：只放公开信息和自己可负责的内容。</li>
@@ -359,6 +503,11 @@ const COURSES = [
       { q: "企业 AI 工具选型的三个阶梯？", a: "公开个人版（只放公开信息）→ 企业版/API（数据不用于训练、有管控）→ 私有化部署开源模型（数据不出门，强监管行业用）。" },
       { q: "贴内容给 AI 前的必答一问是什么？", a: "「这段内容如果流出去，最坏会怎样？」——用最坏情况判断是否脱敏或不贴。" },
       { q: "AI 生成的对外内容，为什么必须人工核验？", a: "两个原因：幻觉可能编造事实数字；对外承诺的责任归属在你和你的公司，AI 不担责。" }
+    ],
+    quiz: [
+      { q: "把带客户真实姓名和手机号的表格贴给公开 AI，最大的问题是？", options: ["AI 分析不了表格", "敏感数据外流，可能违反个人信息保护法", "会让 AI 变笨"], answer: 1, explain: "数据一旦贴出就离开你的控制，且个保法对数据出域有明确要求。" },
+      { q: "正确的脱敏做法是？", options: ["把手机号换成 138****1234 就够了", "姓名、手机号、账号全部换成代号后再贴", "只删掉金额数字"], answer: 1, explain: "AI 分析靠结构和模式，不需要真实身份信息——客户A、机型X 就够了。" },
+      { q: "对数据安全要求最高的公司，应选择哪种部署方式？", options: ["公开个人版", "企业版 API", "开源模型私有化部署在自家服务器"], answer: 2, explain: "私有化部署数据不出门；个人版最弱，企业版居中。" }
     ]
   },
   {
@@ -375,12 +524,16 @@ const COURSES = [
     ],
     content: `
       <h3>职场 AI 能力树（你现在在哪一层？）</h3>
-      <ul>
-        <li><b>L1 会话</b>：会用 ChatGPT 问问题（多数人在这层）</li>
-        <li><b>L2 会用</b>：提示词框架、文档速读、会议纪要——<b>本应用模块二的目标</b></li>
-        <li><b>L3 会搭</b>：懂前后端和 API，能用 vibe coding 做出可用的工具、知识库、工作流——<b>模块一+模块三的目标</b></li>
-        <li><b>L4 会选型</b>：能评估"该不该用 AI、用哪家、安全边界"，帮团队制定方案——这是 AI 时代职场人的稀缺定位</li>
-      </ul>
+      <div class="dg"><svg viewBox="0 0 660 150" role="img" aria-label="能力树">
+      <rect x="10"  y="105" width="580" height="30" rx="8" fill="#e0f2fe" stroke="#0ea5e9" stroke-width="1.5"/>
+      <text x="300" y="125" text-anchor="middle" font-size="13" fill="#1e293b"><tspan font-weight="bold">L1 会话</tspan>　会用 ChatGPT 问问题（多数人在这里）</text>
+      <rect x="70"  y="70"  width="520" height="30" rx="8" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.5"/>
+      <text x="330" y="90" text-anchor="middle" font-size="13" fill="#1e293b"><tspan font-weight="bold">L2 会用</tspan>　提示词框架 · 文档速读 · 会议纪要（模块二目标）</text>
+      <rect x="130" y="35"  width="460" height="30" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+      <text x="360" y="55" text-anchor="middle" font-size="13" fill="#1e293b"><tspan font-weight="bold">L3 会搭</tspan>　懂前后端和 API，vibe coding 做出真工具（模块一+三目标）</text>
+      <rect x="190" y="0"   width="400" height="30" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <text x="390" y="20" text-anchor="middle" font-size="13" fill="#1e293b"><tspan font-weight="bold">L4 会选型</tspan>　评估方案、定安全边界（稀缺定位）</text>
+      </svg></div>
       <h3>三个月成长节奏（参考）</h3>
       <ul>
         <li><b>第 1 个月</b>：完成本应用全部课程 + 每天用提示词框架解决一个真实工作任务。</li>
@@ -408,14 +561,16 @@ const COURSES = [
       { q: "三个月成长节奏怎么安排？", a: "第1月：学完课程+每日提示词实战；第2月：vibe coding 做真实小工具并上线；第3月：搭 RAG 知识库+跑通 Agent 工作流并复盘。" },
       { q: "说出两个值得长期跟进的免费学习资源", a: "microsoft/generative-ai-for-beginners（21课）、microsoft/ai-agents-for-beginners（11课）、mlabonne/llm-course、roadmap.sh/ai-engineer。" },
       { q: "AI 时代不会过时的三件事是什么？", a: "懂原理（理解机制才能预判表现）、会验收（小步验证+安全检查）、守安全（脱敏、人工核验、合规）。" }
+    ],
+    quiz: [
+      { q: "「能评估该不该用 AI、帮团队定方案、定安全边界」属于能力树哪一层？", options: ["L2 会用", "L3 会搭", "L4 会选型"], answer: 2, explain: "L4 会选型是 AI 时代职场人的稀缺定位。" },
+      { q: "判断新 AI 工具值不值得学，下面哪条不是标准？", options: ["是否解决你每周真实遇到的问题", "是不是标准化方向（如 RAG/Agent）", "是不是大公司出品"], answer: 2, explain: "厂商大小不是标准；问题是否真实、方向是否标准化、回本周期才是。" },
+      { q: "AI 工具每季度都在换，不会过时的三件事是？", options: ["懂原理、会验收、守安全", "记快捷键、囤教程、追发布会", "买课、考证、转发文章"], answer: 0, explain: "理解机制、小步验证、守住安全底线——这些能力可以迁移到任何新工具。" }
     ]
   }
 ];
 
-/* 能力测评：10 题，三个维度
- * dim: web=互联网基础 / ai=AI原理 / app=AI应用与职场
- * map: 答对时这些课程标记为可跳过
- */
+/* 能力测评：10 题，三个维度 */
 const QUIZ = [
   { id: "q1", dim: "web", q: "你在浏览器里看到的网页界面，主要由什么代码负责显示？",
     options: ["前端代码（HTML/CSS/JS）", "后端服务器程序", "数据库", "不确定"],
@@ -458,6 +613,38 @@ const QUIZ = [
     answer: 1, map: ["c9"],
     explain: "敏感数据应先脱敏（客户A、手机号打码）再喂给 AI。" }
 ];
-
-/* 每维度的满分（自动计算） */
 const QUIZ_DIMS = { web: "互联网基础", ai: "AI 原理", app: "AI 应用与职场" };
+
+/* 伴学术语库：页面里的术语会自动标虚线，点击即弹出通俗解释 */
+const GLOSSARY = [
+  { term: "前端", plain: "运行在用户浏览器里的程序，负责你看到和点击的一切界面。三件套：HTML（骨架）、CSS（外观）、JavaScript（动作）。就像餐厅大堂。" },
+  { term: "后端", plain: "运行在服务器上的程序，用户看不见，负责真正的业务逻辑：校验密码、处理订单、计算数据。就像餐厅后厨。" },
+  { term: "数据库", plain: "专门安全存放数据的软件（如 MySQL）。数据写进去不会因刷新页面丢失，还能快速查询。就像餐厅仓库。" },
+  { term: "API", plain: "程序之间约定的对话方式：按规定格式发请求、收响应，彼此不用了解内部实现。像餐厅服务员或外卖取餐口。调用 ChatGPT 本质就是调 API。" },
+  { term: "API Key", plain: "调用 API 的密钥 = 身份证 + 钱包：证明你是谁、按用量扣费。泄露会被盗刷，所以只能放后端服务器，绝不写在前端代码里。" },
+  { term: "部署", plain: "把写好的代码放到服务器上运行，让全世界能通过网址访问。静态网站可用 GitHub Pages（免费），复杂应用用云服务器。" },
+  { term: "服务器", plain: "一台 24 小时开机、放在机房里的电脑，专门跑后端程序和存数据。'云服务器'就是租来的这种电脑。" },
+  { term: "环境变量", plain: "存在服务器配置里、不写进代码文件的敏感信息（如 API Key、密码）。程序运行时读取，这样代码分享出去也不会泄露密钥。" },
+  { term: "Token", plain: "（词元）模型处理文本的最小单位，一个汉字约 1-2 个 token。大模型按 token 计费、限制上下文长度。注意和'登录令牌 token'是两个概念。" },
+  { term: "上下文窗口", plain: "模型一次能处理的文字总量上限（如 128K token ≈ 一本长篇小说），相当于工作记忆。聊太久超出窗口，开头的内容就被'遗忘'。" },
+  { term: "幻觉", plain: "大模型一本正经编造不存在事实的现象。原因是它优化的是「接得像」而不是「说得对」。对策：RAG、要求给出来源、人工核实。" },
+  { term: "温度", plain: "Temperature，调用模型 API 的'创造力旋钮'：调低输出稳定刻板（适合提取数据），调高更有创意但不稳定（适合头脑风暴）。" },
+  { term: "训练", plain: "让模型读海量文本、调整数千亿参数的学习过程，要几万张显卡跑几个月，极贵。我们平时用模型是'推理'，不是训练。" },
+  { term: "推理", plain: "训练好的模型被使用的过程：你问、它答。每次回答背后是几亿次计算，所以按 token 收费。" },
+  { term: "参数", plain: "模型内部的可调节旋钮（GPT 级别有数千亿个）。训练就是调这些旋钮让预测更准；参数量常用来描述模型大小。" },
+  { term: "提示词", plain: "Prompt，你发给 AI 的指令。好的提示词包含：角色、背景、任务、格式、示例（口诀：角背任格例）。" },
+  { term: "few-shot", plain: "少样本示例：在提示词里贴 1-2 个你期望的输出样子，让 AI 模仿。比纯文字描述格式和口吻的命中率高得多。" },
+  { term: "微调", plain: "Fine-tune，拿自己的数据继续训练模型，改变它的'风格/技能'。贵、慢、更新难；教知识不如用 RAG。" },
+  { term: "RAG", plain: "检索增强生成：先从你的资料里检索相关段落，塞进提示词让模型'开卷考试'。四步：切块→向量化→检索→生成。企业知识库的主流方案。" },
+  { term: "嵌入", plain: "Embedding，把一段文字变成一串数字（向量）的技术。意思相近的话，向量距离也近——语义搜索的基础。" },
+  { term: "向量", plain: "一串代表文字语义的数字。'年假申请'和'休假流程'用词不同但向量很近，所以能互相搜到。" },
+  { term: "向量数据库", plain: "专门存向量、按'距离最近'快速检索的数据库（如 Milvus、pgvector）。RAG 的核心组件。" },
+  { term: "Agent", plain: "智能体：大模型 + 工具 + 自主循环。给它一个目标，它会自己决定调用什么工具（查日历、发邮件）、循环执行直到完成。" },
+  { term: "工具调用", plain: "Function Calling：模型输出'我要调某工具+参数'的指令，真正的执行是你的程序完成，结果再喂回模型。模型是大脑，程序是手脚。" },
+  { term: "MCP", plain: "模型上下文协议，AI 工具的统一接口标准（像 USB）：工具方按规范提供一次，各种 AI 应用都能即插即用。" },
+  { term: "工作流", plain: "把重复任务固化为自动执行的步骤链（如每周一自动汇总数据生成周报）。工具：影刀、n8n、飞书机器人，或 vibe coding 写脚本。" },
+  { term: "脱敏", plain: "把敏感信息换成代号再给 AI（张伟→客户A，手机号→隐去）。AI 分析靠结构和模式，不需要真实身份，能挡住大部分泄密风险。" },
+  { term: "git", plain: "版本管理工具：git commit 是存档点，写坏了随时回滚；git checkout . 丢弃未提交的修改回到上个存档。vibe coding 的救命绳。" },
+  { term: "开源模型", plain: "公开 downloadable 权重的模型（如 Qwen、DeepSeek、Llama），可以下载到自己服务器部署，数据不出门。" },
+  { term: "私有化部署", plain: "把模型装在公司自己的服务器上运行，数据完全不经过外部。成本高，适合金融、医疗等强监控行业。" }
+];
