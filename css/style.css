@@ -110,6 +110,35 @@ body {
 .tag { display: inline-block; font-size: .72rem; padding: 2px 8px; border-radius: 99px; margin-left: 8px; vertical-align: middle; }
 .tag.done { background: #dcfce7; color: var(--ok); }
 .tag.part { background: #fef9c3; color: #a16207; }
+.tag.must { background: #fee2e2; color: #dc2626; }
+.tag.rec { background: #dbeafe; color: #1d4ed8; }
+.tag.skip { background: #f1f5f9; color: #64748b; }
+
+/* 模块标题 */
+.module-title {
+  font-weight: 700; color: var(--primary);
+  margin: 22px 2px 10px; font-size: .95rem;
+  display: flex; align-items: center; gap: 8px;
+}
+.module-title::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+/* 测评 */
+.quiz-q { font-size: 1.05rem; font-weight: 700; margin: 18px 0 12px; }
+.quiz-options { display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt {
+  text-align: left; border: 1.5px solid var(--border); background: #fff;
+  border-radius: 12px; padding: 13px 16px; font: inherit; font-size: .95rem;
+  cursor: pointer; transition: border-color .15s, background .15s;
+}
+.quiz-opt:hover { border-color: var(--primary); background: var(--primary-soft); }
+
+/* 测评结果 */
+.result-card { background: linear-gradient(160deg, #ffffff, #eef2ff); }
+.score-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; font-size: .9rem; }
+.score-row span { width: 9em; flex: none; font-size: .85rem; }
+.score-row b { width: 3.2em; text-align: right; color: var(--primary); }
+.score-bar { flex: 1; height: 10px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+.score-bar > div { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 99px; }
 
 /* ---------- 按钮 ---------- */
 .btn {
