@@ -1,9 +1,10 @@
-/* AI 学习同步助手 - 主逻辑
+/* AI 学习同步助手 - 主逻辑 v2
  * 数据结构：
- *   state.courses[courseId] = { read, completed, previewed, notes }
- *   state.cards[cardId]     = { ease, interval(天), reps, due(时间戳) }
- *   state.activity[dateStr] = 复习张数
- *   state.updatedAt         = 最后修改时间（用于同步冲突判断）
+ *   state.version          = 2
+ *   state.assessment       = { date, answers:{qid:选项}, scores:{web,ai,app,total}, recs:{courseId:'skip'|'must'|'rec'} }
+ *   state.courses[courseId]= { read, completed, previewed, notes }
+ *   state.cards[cardId]    = { ease, interval(天), reps, due(时间戳) }
+ *   state.activity[dateStr]= 复习张数
  */
 (function () {
   "use strict";
@@ -14,16 +15,28 @@
   const SYNC_FILE = "ai-learning-data.json";
   const NEW_PER_DAY = 15;
 
-  /* ---------------- 状态 ---------------- */
+  /* ---------------- 状态与迁移 ---------------- */
   function defaultState() {
-    return { version: 1, courses: {}, cards: {}, activity: {}, updatedAt: 0 };
+    return { version: 2, assessment: null, courses: {}, cards: {}, activity: {}, updatedAt: 0 };
   }
   function loadState() {
-    try {
-      const s = JSON.parse(localStorage.getItem(LS_STATE));
-      if (s && s.version === 1) return s;
-    } catch (e) { /* ignore */ }
-    return defaultState();
+    let s = null;
+    try { s = JSON.parse(localStorage.getItem(LS_STATE)); } catch (e) { /* ignore */ }
+    if (!s || typeof s !== "object") return defaultState();
+    if (s.version !== 2) {
+      // v1 -> v2：课程与卡片体系升级，保留学习活动记录
+      s = {
+        version: 2,
+        assessment: null,
+        courses: {}, cards: {},
+        activity: s.activity || {},
+        updatedAt: s.updatedAt || 0,
+        syncedAt: s.syncedAt || 0
+      };
+      localStorage.setItem(LS_STATE, JSON.stringify(s));
+      setTimeout(() => toast("课程体系已升级到 v2，请先做能力测评 📋", 4500), 800);
+    }
+    return s;
   }
   let state = loadState();
   function save() {
@@ -47,7 +60,6 @@
   /* ---------------- SRS (SM-2 简化版) ---------------- */
   function grade(cardId, q) {
     const c = cardState(cardId);
-    // q: 0=忘了, 4=想起来了, 5=轻松
     if (q < 3) {
       c.reps = 0;
       c.interval = 10 / (60 * 24); // 10 分钟后重来
@@ -83,10 +95,54 @@
   function streakDays() {
     let n = 0;
     const d = new Date();
-    // 今天没学不打断连续天数（以昨天为起点回溯）
     if (!state.activity[todayStr(d)]) d.setDate(d.getDate() - 1);
     while (state.activity[todayStr(d)]) { n++; d.setDate(d.getDate() - 1); }
     return n;
+  }
+
+  /* ---------------- 能力测评与推荐 ---------------- */
+  function computeAssessment(answers) {
+    const scores = { web: 0, ai: 0, app: 0 };
+    const dimTotal = { web: 0, ai: 0, app: 0 };
+    const skipCourses = new Set();
+    QUIZ.forEach(q => {
+      dimTotal[q.dim]++;
+      if (answers[q.id] === q.answer) {
+        scores[q.dim]++;
+        (q.map || []).forEach(c => skipCourses.add(c));
+      }
+    });
+    scores.total = scores.web + scores.ai + scores.app;
+    // 推荐规则：题目答对 → 直接映射课程可跳过；未覆盖到的课按维度分数给建议
+    const recs = {};
+    COURSES.forEach(c => {
+      if (skipCourses.has(c.id)) recs[c.id] = "skip";
+      else recs[c.id] = "must";
+    });
+    // 未被任何题目覆盖的课程：维度满分时降为"建议"
+    const covered = new Set();
+    QUIZ.forEach(q => (q.map || []).forEach(cid => covered.add(cid)));
+    COURSES.forEach(c => {
+      if (!covered.has(c.id) && recs[c.id] === "must") recs[c.id] = "rec";
+    });
+    // 提示词课（c3）：只有三项全对才可跳过
+    if (scores.total === QUIZ.length) recs["c3"] = "skip";
+    else if (!covered.has("c3")) recs["c3"] = "rec";
+    if (state.assessment && recs["c3"] !== "skip") { /* 保持计算结果 */ }
+    return { date: Date.now(), answers, scores, recs, dimTotal };
+  }
+  function recLabel(tag) {
+    return { must: '<span class="tag must">🔥 必修</span>', rec: '<span class="tag rec">📖 建议</span>', skip: '<span class="tag skip">💤 可跳过</span>' }[tag] || "";
+  }
+  // 学习顺序：必修 → 建议 → 可跳过（同级保持原顺序）
+  function orderedCourses() {
+    const rank = { must: 0, rec: 1, skip: 2 };
+    const recs = state.assessment ? state.assessment.recs : null;
+    if (!recs) return COURSES.slice();
+    return COURSES.slice().sort((a, b) => (rank[recs[a.id]] ?? 1) - (rank[recs[b.id]] ?? 1));
+  }
+  function nextCourse() {
+    return orderedCourses().find(c => !courseState(c.id).completed);
   }
 
   /* ---------------- 工具 ---------------- */
@@ -101,15 +157,17 @@
   function esc(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
-  const TAB_NAMES = { learn: "学习", preview: "预习", review: "复习", me: "我的" };
   let currentTab = "learn";
-  let reviewQueue = null; // 当前复习会话队列
+  let reviewQueue = null;
   let currentCard = null;
-  let revealed = false;
+  let quizActive = false;   // 正在测评
+  let quizIdx = 0;
+  let quizAnswers = {};
 
   /* ---------------- 标签页 ---------------- */
   function switchTab(name) {
     currentTab = name;
+    if (name !== "learn") quizActive = false;
     document.querySelectorAll("#view-learn,#view-preview,#view-review,#view-me").forEach(el => el.classList.add("hidden"));
     $("#view-" + name).classList.remove("hidden");
     document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
@@ -122,25 +180,103 @@
   }
   document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
 
+  /* ---------------- 测评 ---------------- */
+  function startQuiz() {
+    quizActive = true;
+    quizIdx = 0;
+    quizAnswers = {};
+    renderQuiz();
+  }
+  function renderQuiz() {
+    if (quizIdx >= QUIZ.length) {
+      state.assessment = computeAssessment(quizAnswers);
+      quizActive = false;
+      save();
+      renderLearn();
+      const s = state.assessment.scores;
+      toast(`测评完成！你的水平：${levelName(s.total)}（答对 ${s.total}/${QUIZ.length}）`, 5000);
+      window.scrollTo({ top: 0 });
+      return;
+    }
+    const q = QUIZ[quizIdx];
+    $("#view-learn").innerHTML = `
+      <div class="card">
+        <h2>📋 能力测评（第 ${quizIdx + 1} / ${QUIZ.length} 题）</h2>
+        <div class="progressbar"><div style="width:${quizIdx / QUIZ.length * 100}%"></div></div>
+        <p class="muted">10 道选择题，答不上来就选「不确定」——测评的目的是帮你跳过已会的、聚焦需要的，诚实作答效果最好。</p>
+        <div class="quiz-q">${esc(q.q)}</div>
+        <div class="quiz-options">
+          ${q.options.map((opt, i) => `<button class="quiz-opt" data-action="quizPick" data-opt="${i}">${esc(opt)}</button>`).join("")}
+        </div>
+      </div>`;
+  }
+  function levelName(total) {
+    if (total <= 3) return "L1 起步者";
+    if (total <= 6) return "L2 进阶者";
+    if (total <= 8) return "L3 应用者";
+    return "L4 高手（大部分课可跳过）";
+  }
+  function renderQuizResult() {
+    const a = state.assessment;
+    const s = a.scores;
+    const bar = (label, val, max) => `
+      <div class="score-row"><span>${label}</span>
+        <div class="score-bar"><div style="width:${max ? val / max * 100 : 0}%"></div></div>
+        <b>${val}/${max}</b></div>`;
+    return `
+      <div class="card result-card">
+        <h2>🎯 测评结果：${levelName(s.total)}</h2>
+        <p class="muted">测评时间：${new Date(a.date).toLocaleDateString()} · 共答对 ${s.total}/${QUIZ.length}</p>
+        ${bar("🌐 互联网基础", s.web, a.dimTotal.web)}
+        ${bar("🤖 AI 原理", s.ai, a.dimTotal.ai)}
+        ${bar("💼 AI 应用与职场", s.app, a.dimTotal.app)}
+        <div class="why-box">📌 课程已按你的水平标记：<b>🔥 必修</b>（你需要学的）、<b>📖 建议</b>、<b>💤 可跳过</b>（你已掌握的）。建议从「学习」页的第一门必修课开始。</div>
+        <div class="btn-row">
+          <button class="btn" data-action="startQuiz">🔄 重新测评</button>
+        </div>
+      </div>`;
+  }
+
   /* ---------------- 学习页 ---------------- */
   function renderLearn() {
+    if (quizActive) return renderQuiz();
+    const recs = state.assessment && state.assessment.recs;
+    let html = "";
+    if (!state.assessment) {
+      html += `
+        <div class="card">
+          <h2>👋 先花 2 分钟做个能力测评</h2>
+          <p class="muted">10 道选择题，测出你在「互联网基础 / AI 原理 / AI 应用」三个维度的水平，自动为你标记每门课：必修 🔥 / 建议 📖 / 可跳过 💤——已经掌握的课就不用浪费时间了。</p>
+          <div class="btn-row"><button class="btn" data-action="startQuiz">开始测评 →</button></div>
+        </div>`;
+    } else {
+      html += renderQuizResult();
+    }
+    const list = orderedCourses();
     const doneCount = COURSES.filter(c => courseState(c.id).completed).length;
     const pct = Math.round(doneCount / COURSES.length * 100);
-    let html = `
+    let lastModule = "";
+    html += `
       <div class="card">
-        <h2>AI 入门六讲</h2>
+        <h2>职场 AI 实战课（10 讲）</h2>
         <p class="muted">电脑上阅读学习，手机上预习和复习。点击课程展开正文。</p>
         <div class="progressbar"><div style="width:${pct}%"></div></div>
-        <p class="muted">总进度：${doneCount} / ${COURSES.length} 课（${pct}%）</p>
+        <p class="muted">总进度：${doneCount} / ${COURSES.length} 课（${pct}%）${recs ? " · 排序已按你的测评结果调整" : ""}</p>
       </div>`;
-    COURSES.forEach((c, i) => {
+    list.forEach(c => {
+      const i = COURSES.indexOf(c) + 1;
       const cs = courseState(c.id);
-      const tag = cs.completed ? '<span class="tag done">已学完</span>' : (cs.read ? '<span class="tag part">学习中</span>' : "");
+      const tag = recs ? recLabel(recs[c.id]) : "";
+      const doneTag = cs.completed ? '<span class="tag done">✓ 已学完</span>' : (cs.read ? '<span class="tag part">学习中</span>' : "");
+      if (c.module !== lastModule) {
+        lastModule = c.module;
+        html += `<div class="module-title">${esc(c.module)}</div>`;
+      }
       html += `
         <div class="card course-item ${cs.completed ? "done" : ""}" data-course="${c.id}">
           <div class="course-head" data-action="toggle" data-id="${c.id}">
-            <div class="num">${i + 1}</div>
-            <div class="t"><b>${esc(c.title)}${tag}</b><span>${esc(c.subtitle)}</span></div>
+            <div class="num">${i}</div>
+            <div class="t"><b>${esc(c.title)}${tag}${doneTag}</b><span>${esc(c.subtitle)}</span></div>
             <div class="arrow">▶</div>
           </div>
           <div class="course-body">
@@ -158,33 +294,36 @@
 
   /* ---------------- 预习页 ---------------- */
   function renderPreview() {
-    const next = COURSES.find(c => !courseState(c.id).completed);
+    const next = nextCourse();
     let html = "";
     if (next) {
       const cs = courseState(next.id);
+      const rec = state.assessment && state.assessment.recs[next.id];
       html += `
         <div class="card">
-          <h2>🔭 下一课预习：${esc(next.title)}</h2>
-          <p class="muted">${esc(next.subtitle)}</p>
+          <h2>🔭 下一课预习：${esc(next.title)} ${rec ? recLabel(rec) : ""}</h2>
+          <p class="muted">${esc(next.subtitle)} · ${esc(next.module)}</p>
           <div class="why-box">💡 <b>为什么值得预习：</b>${esc(next.why)}</div>
           <ul class="preview-points">
             ${next.preview.map(p => `<li>${esc(p)}</li>`).join("")}
           </ul>
-          <p class="muted">带着这些问题去读正文，比直接硬读效率高得多。预习完可以在「学习」页阅读本课正文。</p>
+          <p class="muted">带着这些问题去读正文，比直接硬读效率高得多。</p>
           <div class="btn-row">
             <button class="btn ${cs.previewed ? "ghost" : ""}" data-action="previewed" data-id="${next.id}">${cs.previewed ? "✓ 已预习（点击取消）" : "标记本课已预习"}</button>
             <button class="btn ghost" data-action="gotoLearn" data-id="${next.id}">去学习本课 →</button>
           </div>
         </div>`;
     } else {
-      html += `<div class="card empty"><span class="big">🎉</span>全部课程已学完！可以用「复习」巩固，或期待后续新课程。</div>`;
+      html += `<div class="card empty"><span class="big">🎉</span>全部课程已学完！可以用「复习」巩固，或重新测评看看进步。</div>`;
     }
     html += `<div class="card"><h2>全部课程预习要点</h2>`;
-    COURSES.forEach((c, i) => {
+    orderedCourses().forEach(c => {
+      const i = COURSES.indexOf(c) + 1;
       const cs = courseState(c.id);
+      const rec = state.assessment && state.assessment.recs[c.id];
       html += `
         <details ${c.id === (next && next.id) ? "open" : ""}>
-          <summary style="cursor:pointer;padding:8px 0;font-weight:600;">第 ${i + 1} 课 · ${esc(c.title)} ${cs.previewed ? '<span class="tag done">已预习</span>' : ""}</summary>
+          <summary style="cursor:pointer;padding:8px 0;font-weight:600;">第 ${i} 课 · ${esc(c.title)} ${rec ? recLabel(rec) : ""} ${cs.previewed ? '<span class="tag done">已预习</span>' : ""}</summary>
           <ul class="preview-points">${c.preview.map(p => `<li>${esc(p)}</li>`).join("")}</ul>
         </details>`;
     });
@@ -201,7 +340,6 @@
     }
     if (reviewQueue.length === 0) {
       reviewQueue = null;
-      const total = CARDS.length;
       const learned = CARDS.filter(c => state.cards[c.id]).length;
       const dueTomorrow = CARDS.filter(c => {
         const s = state.cards[c.id];
@@ -211,7 +349,7 @@
         <div class="card empty">
           <span class="big">🌿</span>
           <b>今天的复习任务全部完成！</b>
-          <p class="muted">已学卡片 ${learned} / ${total} · 24 小时内还有 ${dueTomorrow} 张到期。<br>复习讲求少而勤，明天再来效果最好。</p>
+          <p class="muted">已学卡片 ${learned} / ${CARDS.length} · 24 小时内还有 ${dueTomorrow} 张到期。<br>复习讲求少而勤，明天再来效果最好。</p>
           <div class="btn-row" style="justify-content:center;">
             <button class="btn ghost" data-action="forceReview">再练 5 张（加练）</button>
           </div>
@@ -220,11 +358,9 @@
       return;
     }
     currentCard = reviewQueue[0];
-    const cs = courseState(currentCard.courseId);
     const course = COURSES.find(c => c.id === currentCard.courseId);
     const s = state.cards[currentCard.id];
     const isNew = !s;
-    revealed = false;
     $("#view-review").innerHTML = `
       <div class="card">
         <p class="muted" style="margin:0;">剩余 ${reviewQueue.length} 张${isNew ? " · 新卡片" : ""} · 来自《${esc(course.title)}》</p>
@@ -238,8 +374,8 @@
         </div>
         <div class="rate-row hidden" id="rateRow">
           <button class="btn danger" data-action="grade" data-q="0">😱 忘了<br><span style="font-size:.72rem;font-weight:400;">10 分钟后再来</span></button>
-          <button class="btn warn" data-action="grade" data-q="4">🙂 想起来了<br><span style="font-size:.72rem;font-weight:400;">隔 ${Math.max(1, s ? Math.round(s.interval * s.ease) : 1)} 天</span></button>
-          <button class="btn ok" data-action="grade" data-q="5">😄 很轻松<br><span style="font-size:.72rem;font-weight:400;">隔更久</span></button>
+          <button class="btn warn" data-action="grade" data-q="4">🙂 想起来了<br><span style="font-size:.72rem;font-weight:400;">间隔会拉长</span></button>
+          <button class="btn ok" data-action="grade" data-q="5">😄 很轻松<br><span style="font-size:.72rem;font-weight:400;">间隔更久</span></button>
         </div>
       </div>`;
     updateBadge();
@@ -260,6 +396,13 @@
     const doneCount = COURSES.filter(c => courseState(c.id).completed).length;
     const token = localStorage.getItem(LS_TOKEN) || "";
     const gist = localStorage.getItem(LS_GIST) || "";
+    let assessHtml = "";
+    if (state.assessment) {
+      const s = state.assessment.scores;
+      assessHtml = `<p class="muted">最近测评：${new Date(state.assessment.date).toLocaleDateString()} · ${levelName(s.total)}（${s.total}/${QUIZ.length}）</p>`;
+    } else {
+      assessHtml = `<p class="muted">还没有做过测评，去「学习」页开始 👉</p>`;
+    }
     $("#view-me").innerHTML = `
       <div class="card">
         <h2>学习统计</h2>
@@ -270,12 +413,13 @@
           <div class="stat"><b>${reviews}</b><span>累计复习次数</span></div>
           <div class="stat"><b>${streakDays()}</b><span>连续学习天数</span></div>
         </div>
+        ${assessHtml}
       </div>
       <div class="card">
         <h2>跨设备同步（GitHub 云端）</h2>
         <p class="muted">在电脑和手机上都填入同一个 GitHub Token，即可把学习进度同步到你的 GitHub 私有 Gist。Token 只保存在本机浏览器里，不会同步给他人。</p>
-        <label class="field">GitHub Token <span class="tip">建议用 fine-grained token，仅勾选 Gists 权限</span></label>
-        <input type="password" id="tokenInput" value="${esc(token)}" placeholder="ghp_… / github_pat_…" />
+        <label class="field">GitHub Token <span class="tip">建议用 fine-grained token，仅在 Account 权限里开 Gists 读写</span></label>
+        <input type="password" id="tokenInput" value="${esc(token)}" placeholder="github_pat_…" />
         <label class="field">Gist ID <span class="tip">第一次上传后会自动生成并填回，两台设备填同一个</span></label>
         <input type="text" id="gistInput" value="${esc(gist)}" placeholder="留空则首次上传时自动创建私有 Gist" />
         <div class="btn-row">
@@ -293,7 +437,7 @@
       <div class="card">
         <h2>使用小贴士</h2>
         <ul>
-          <li>📱 手机浏览器打开本页后，选择「添加到主屏幕」，即可像 App一样全屏使用。</li>
+          <li>📱 手机浏览器打开本页后，选择「添加到主屏幕」，即可像 App 一样全屏使用。</li>
           <li>🧠 复习卡片基于 SM-2 记忆算法自动排期：忘记的 10 分钟后重现，记住的间隔逐次拉长。</li>
           <li>✍️ 每课笔记自动保存在本地，并随同步上传。</li>
         </ul>
@@ -303,11 +447,12 @@
   /* ---------------- 侧栏概览 ---------------- */
   function renderOverview() {
     const due = dueCards().length;
-    const next = COURSES.find(c => !courseState(c.id).completed);
+    const next = nextCourse();
     const done = COURSES.filter(c => courseState(c.id).completed).length;
     const today = state.activity[todayStr()] || 0;
     const el = $("#overview");
     if (el) el.innerHTML = `
+      <div class="overview-row"><span>📋 测评水平</span><b>${state.assessment ? levelName(state.assessment.scores.total) : "未测评"}</b></div>
       <div class="overview-row"><span>🧠 待复习</span><b>${due} 张</b></div>
       <div class="overview-row"><span>📖 课程进度</span><b>${done}/${COURSES.length}</b></div>
       <div class="overview-row"><span>🔭 下一课</span><b>${next ? esc(next.title) : "已完成 🎉"}</b></div>
@@ -333,14 +478,13 @@
     if (!res.ok) {
       let msg = "HTTP " + res.status;
       if (res.status === 401) msg = "Token 无效或已过期（401）";
-      else if (res.status === 403) msg = "权限不足或触发限流（403），请检查 token 是否勾选了 Gists 权限";
+      else if (res.status === 403) msg = "权限不足或触发限流（403），Gists 权限需在 Account 权限里开启";
       else if (res.status === 404) msg = "找不到该 Gist（404），请检查 Gist ID";
       throw new Error(msg);
     }
     return res.json();
   }
   function syncPayload() {
-    // token 不入云端数据
     return JSON.stringify(state);
   }
   async function pushSync() {
@@ -375,13 +519,14 @@
       const raw = j.files && j.files[SYNC_FILE] && j.files[SYNC_FILE].content;
       if (!raw) return toast("云端 Gist 里没有找到数据文件", 4000);
       const cloud = JSON.parse(raw);
+      if (cloud.version !== 2) cloud.version = 2;
+      if (!cloud.assessment) cloud.assessment = null;
       const cT = cloud.updatedAt || 0, lT = state.updatedAt || 0;
       if (lT > cT) {
         if (!confirm(`本机进度（${new Date(lT).toLocaleString()}）比云端（${new Date(cT).toLocaleString()}）更新，仍要用云端覆盖本机吗？`)) return;
       }
-      const token = localStorage.getItem(LS_TOKEN); // token 只存本地
+      const token = localStorage.getItem(LS_TOKEN);
       state = cloud;
-      state.version = 1;
       localStorage.setItem(LS_STATE, JSON.stringify(state));
       localStorage.setItem(LS_TOKEN, token || "");
       state.syncedAt = Date.now();
@@ -406,7 +551,7 @@
     reader.onload = () => {
       try {
         const data = JSON.parse(reader.result);
-        if (!data || data.version !== 1) throw new Error("文件格式不对");
+        if (!data || data.version !== 2) throw new Error("文件格式不对（需要 v2）");
         state = data;
         localStorage.setItem(LS_STATE, JSON.stringify(state));
         reviewQueue = null;
@@ -423,9 +568,14 @@
     if (!btn) return;
     const action = btn.dataset.action;
     const id = btn.dataset.id;
-    if (action === "toggle") {
-      const item = btn.closest(".course-item");
-      item.classList.toggle("open");
+    if (action === "startQuiz") {
+      startQuiz();
+    } else if (action === "quizPick") {
+      quizAnswers[QUIZ[quizIdx].id] = parseInt(btn.dataset.opt, 10);
+      quizIdx++;
+      renderQuiz();
+    } else if (action === "toggle") {
+      btn.closest(".course-item").classList.toggle("open");
     } else if (action === "complete") {
       const cs = courseState(id);
       cs.completed = !cs.completed;
@@ -446,7 +596,6 @@
       $("#answer").classList.remove("hidden");
       $("#revealRow").classList.add("hidden");
       $("#rateRow").classList.remove("hidden");
-      revealed = true;
     } else if (action === "grade") {
       if (!currentCard) return;
       grade(currentCard.id, parseInt(btn.dataset.q, 10));
